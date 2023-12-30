@@ -8,7 +8,8 @@ pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
 
 player = pygame.Rect(0, 0, 20, 20)
-player.y = 20
+player.y = 300
+player.x = 0
 player.center = window.get_rect().center
 
 worldbox = []
@@ -30,13 +31,30 @@ friction = 15
 gravity = 18
 maxstepup = 2
 
+
+def AllColidingLines(worldline):
+  for z in range(0, len(worldline), 4):
+    if player.clipline(worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]):
+      polylinecolision.extend([worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]])
+  return polylinecolision
+      
+def TheColidingLines(polylinecolision):
+  for z in range(0, len(polylinecolision), 4):
+    if player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]):
+      nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
+  return nextlinecolision
+
 xvelosity = 0
 yvelosity = 0
 grounded = 0
 getTicksLastFrame = 0
 stepup = 0
 
-
+worldline = []
+for z in range(0, len(worldpoly), 3):
+      worldline.extend([worldpoly[z], worldpoly[z + 1]])
+      worldline.extend([worldpoly[z + 1], worldpoly[z + 2]])
+      worldline.extend([worldpoly[z], worldpoly[z + 2]])
 
 run = True
 while run:
@@ -105,17 +123,9 @@ while run:
           xvelosity = xvelosity / 100
           
     polylinecolision = []
-    worldline = []
-
     
-    for z in range(0, len(worldpoly), 3):
-      worldline.extend([worldpoly[z], worldpoly[z + 1]])
-      worldline.extend([worldpoly[z + 1], worldpoly[z + 2]])
-      worldline.extend([worldpoly[z], worldpoly[z + 2]])
-
-    for z in range(0, len(worldline), 4):
-      if player.clipline(worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]):
-        polylinecolision.extend([worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]])
+    polylinecolision = AllColidingLines(worldpoly)
+    
     stepup = 0
   
     while len(polylinecolision) > 0 and stepup < maxstepup:
@@ -125,39 +135,39 @@ while run:
 
       nextlinecolision = []
 
-      for z in range(0, len(polylinecolision), 4):
-        
-        if player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]):
-          
-          nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
+      nextlinecolision = TheColidingLines(polylinecolision)
 
       polylinecolision = nextlinecolision
         
     if not stepup < maxstepup:
       player.y -= stepup
 
-      while len(polylinecolision) > 0:
+      player.x -= xvelosity
+
+      #while len(polylinecolision) > 0:
       
-        if xvelosity > 0:
-          player.x -= 1
-        else:
-          player.x += 1
-  
-        nextlinecolision = []
+        #if xvelosity > 0:
+          #player.x -= 1
+        #else:
+          #player.x += 1
+          #print()
+        #nextlinecolision = []
 
-        for z in range(0, len(polylinecolision), 4):
-        
-          if not player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]) == ():
+        #for z in range(0, len(polylinecolision), 4):
+          
+          #clip = player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3])
+          #if not clip:
             
-            nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
+            #nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
 
-      polylinecolision = nextlinecolision
+      #polylinecolision = nextlinecolision
   
     yvelosity -= gravity * deltaTime
     
     player.y -= yvelosity
     
     grounded = 0
+
     for z in range(0, len(worldbox), 9):
       worldb = pygame.Rect(worldbox[int(z)], worldbox[int(z + 1)], worldbox[int(z + 2)], worldbox[int(z + 3)])
       worldb.x = worldbox[z + 4]
