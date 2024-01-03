@@ -1,207 +1,191 @@
 import pygame
 
 pygame.init()
-window = pygame.display.set_mode((500, 350))
+W, H=500, 350
+screen = pygame.display.set_mode([W, H])
 pygame_icon = pygame.image.load('Hammer Icon.png')
 pygame.display.set_icon(pygame_icon)
 pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
+running = True
 
-player = pygame.Rect(0, 0, 20, 20)
-player.y = 300
-player.x = 0
-player.center = window.get_rect().center
+bcg=(200, 200, 200)
+red=(255, 0 ,0)
+purp=(255, 0, 255)
+wall=(100, 100, 100)
 
-worldbox = []
-worldpoly = []
+rectangles = []
+polygons = []
 
-worldbox.extend([0, 0, 500, 50, 0, 300, 31, 158, 27])
-worldbox.extend([0, 0, 50, 200, 0, 105, 70, 70, 70])
-worldbox.extend([0, 0, 50, 200, 450, 105, 70, 70, 70])
-worldbox.extend([0, 0, 100, 25, 200, 200, 45, 45, 45])
+rectangles.extend([0, 0, 500, 50, 0, 300, 31, 158, 27])
+rectangles.extend([0, 0, 50, 200, 0, 105, 70, 70, 70])
+rectangles.extend([0, 0, 50, 200, 450, 105, 70, 70, 70])
+rectangles.extend([0, 0, 100, 25, 200, 200, 45, 45, 45])
 
-worldpoly.extend([100, 100, 200, 100, 200, 200])
-worldpoly.extend([300, 200, 300, 250, 250, 250])
-
-
-speed = 30
-jumpspeed = 12
-maxs = 11
-friction = 15
-gravity = 18
-maxstepup = 2
+polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
 
 
-def AllColidingLines(worldline):
-  for z in range(0, len(worldline), 4):
-    if player.clipline(worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]):
-      polylinecolision.extend([worldline[z], worldline[z + 1], worldline[z + 2], worldline[z + 3]])
-  return polylinecolision
-      
-def TheColidingLines(polylinecolision):
-  for z in range(0, len(polylinecolision), 4):
-    if player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]):
-      nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
-  return nextlinecolision
 
-xvelosity = 0
-yvelosity = 0
-grounded = 0
-getTicksLastFrame = 0
-stepup = 0
+def collideLineLine(l1_p1, l1_p2, l2_p1, l2_p2):
 
-worldline = []
-for z in range(0, len(worldpoly), 3):
-      worldline.extend([worldpoly[z], worldpoly[z + 1]])
-      worldline.extend([worldpoly[z + 1], worldpoly[z + 2]])
-      worldline.extend([worldpoly[z], worldpoly[z + 2]])
+    # normalized direction of the lines and start of the lines
+    P  = pygame.math.Vector2(*l1_p1)
+    line1_vec = pygame.math.Vector2(*l1_p2) - P
+    R = line1_vec.normalize()
+    Q  = pygame.math.Vector2(*l2_p1)
+    line2_vec = pygame.math.Vector2(*l2_p2) - Q
+    S = line2_vec.normalize()
 
-run = True
-while run:
-    clock.tick(30)
+    # normal vectors to the lines
+    RNV = pygame.math.Vector2(R[1], -R[0])
+    SNV = pygame.math.Vector2(S[1], -S[0])
+    RdotSVN = R.dot(SNV)
+    if RdotSVN == 0:
+        return False
+
+    # distance to the intersection point
+    QP  = Q - P
+    t = QP.dot(SNV) / RdotSVN
+    u = QP.dot(RNV) / RdotSVN
+
+    return t > 0 and u > 0 and t*t < line1_vec.magnitude_squared() and u*u < line2_vec.magnitude_squared()
+
+def colideRectLine(rect, p1, p2):
+    return (collideLineLine(p1, p2, rect.topleft, rect.bottomleft) or
+            collideLineLine(p1, p2, rect.bottomleft, rect.bottomright) or
+            collideLineLine(p1, p2, rect.bottomright, rect.topright) or
+            collideLineLine(p1, p2, rect.topright, rect.topleft))
+
+def collideRectPolygon(rect, polygon):
+    for i in range(len(polygon)-1):
+        if colideRectLine(rect, polygon[i], polygon[i+1]):
+            return True
+    return False
+
+class player:
+    def bg(self):        
+        screen.fill((200, 200, 200))
+        for c in range(0, len(polygons), 8):
+            self.poly = self.createPolygon(self.x, self.y, polygons, c)
+            pygame.draw.polygon(screen, wall, self.poly)
+        for c in range(0, len(rectangles), 9):
+            rectangle = pygame.Rect(rectangles[c], rectangles[c+1], rectangles[c+2], rectangles[c+3])
+            rectangle.x = self.x+rectangles[c+4]
+            rectangle.y = self.y+rectangles[c+5]
+            pygame.draw.rect(screen, (rectangles[c+6], rectangles[c+7], rectangles[c+8]), rectangle)
+  
+    def createPolygon(self, x, y, list, z):
+        return [
+            (x+list[z], list[z+1]+y), (x+list[z+2], list[z+3]+y), 
+            (x+list[z+4], list[z+5]+y), (x+list[z+6], list[z+7]+y)]
+
+    def __init__(self, color, size=20, speed=.025, maxvelosity=9):
+        self.x=0
+        self.y=0
+        self.col=color
+        self.size=size
+        self.speed=speed
+        self.xvelosity=0
+        self.yvelosity=0
+        self.maxvelosity=maxvelosity
+        self.direction=(0, 0)
+        self.friction=0.5
+        self.gravity=.025
+        self.jump=False
+        self.grounded=True
+        self.stepup=0
+        self.maxstepup=2
+
+    def draw(self):
+        s=self.size
+        self.rect=pygame.Rect(W/2-s/2, H/2-s/2, self.size, self.size)
+        pygame.draw.rect(screen, self.col, self.rect)
+
+    def allcolision(self):
+        coliding = 0
+        for z in range(0, len(rectangles), 9):
+            rectangle = pygame.Rect((rectangles[z], rectangles[z+1]), (rectangles[z+2], rectangles[z+3]))
+            rectangle.x = self.x+rectangles[z+4]
+            rectangle.y = self.y+rectangles[z+5]
+            if rectangle.colliderect(self.rect):
+                coliding += 1
+
+        for z in range(0, len(polygons), 8):
+            polygon = self.createPolygon(self.x, self.y, polygons, z)
+            if collideRectPolygon(self.rect, polygon):
+                coliding += 1
+        
+        if coliding == 0:
+            return False
+        else:
+            return True
+            
+    def move(self):
+        self.xvelosity += self.speed*self.direction*dt
+
+        if self.jump == True and self.grounded == True:
+            self.yvelosity = 100000
+            self.grounded = False
+
+        self.yvelosity -= self.gravity*dt
+        if abs(self.yvelosity) > self.maxvelosity:
+            if self.yvelosity > 0:
+                self.yvelosity = self.maxvelosity
+            else:
+                self.yvelosity = -self.maxvelosity
+        
+        self.y += self.yvelosity
+        if self.allcolision():
+            self.y -= self.yvelosity
+            if self.yvelosity < 0:
+                self.grounded = True
+            else:
+                self.grounded = False
+            self.yvelosity = 0
+
+        if abs(self.xvelosity) > self.maxvelosity:
+            self.xvelosity = self.maxvelosity*self.direction
+        if self.direction==0:
+            if abs(self.xvelosity) < 0.35:
+                self.xvelosity = 0
+            else:
+                if self.xvelosity > 0:
+                    self.xvelosity -= self.friction
+                else:
+                    self.xvelosity += self.friction
+        
+        self.x += self.xvelosity
+        if self.allcolision():
+            self.stepup = 0
+            while self.allcolision() and self.stepup < self.maxstepup*abs(self.xvelosity):
+                self.y += 1
+                self.stepup += 1
+            if self.stepup >= self.maxstepup*abs(self.xvelosity):
+                self.y -= self.stepup
+                self.x -= self.xvelosity
+                self.xvelosity = 0
+                
+            
+
+p=player(red)
+while running:
+    dt = clock.tick(60)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-        if event.type == pygame.KEYDOWN:
-            pass
+            running = False
 
-    keys = pygame.key.get_pressed()
+    p.bg()
+    p.draw()
 
-    t = pygame.time.get_ticks()
-    # deltaTime in seconds.
-    deltaTime = (t - getTicksLastFrame) / 1000
-    getTicksLastFrame = t
-
-    xvelosity += ((keys[pygame.K_d] - keys[pygame.K_a]) * speed * deltaTime)
-
-    if keys[pygame.K_w] == 1 and grounded == 1:
-        yvelosity = jumpspeed
-        grounded = 0
-
-    if keys[pygame.K_RIGHT] - keys[pygame.K_LEFT] == 0:
-        xkey = 0
-    else:
-        xkey = 1
-
-    if abs(xvelosity) > maxs:
-        if xvelosity > 0:
-            xvelosity = maxs
-        else:
-            xvelosity = -maxs
-
-    if xkey == 0:
-        if xvelosity > 0:
-            xvelosity -= friction * deltaTime
-        else:
-            xvelosity += friction * deltaTime
-        if abs(xvelosity) < 0:
-            xvelosity = xvelosity / 100
-
-    player.x += xvelosity
-
-    for z in range(0, len(worldbox), 9):
-
-        worldb = pygame.Rect(worldbox[int(z)], worldbox[int(
-            z + 1)], worldbox[int(z + 2)], worldbox[int(z + 3)])
-        worldb.x = worldbox[z + 4]
-        worldb.y = worldbox[z + 5]
-
-        if player.colliderect(worldb) == 1:
-            stepup = 0
-
-            while player.colliderect(worldb) == 1 and stepup < (maxstepup * abs(xvelosity)):
-                player.y += 1
-                stepup += 1
-
-            if not stepup < maxstepup:
-                player.y -= stepup
-                if xvelosity > 0:
-                    while player.colliderect(worldb) == 1:
-                        player.x -= 1
-                else:
-                    while player.colliderect(worldb) == 1:
-                        player.x += 1
-                xvelosity = xvelosity / 100
-
-    polylinecolision = []
+    keys=pygame.key.get_pressed()
     
-    polylinecolision = AllColidingLines(worldpoly)
-    
-    stepup = 0
+    p.direction = ((keys[pygame.K_a]-keys[pygame.K_d]))
 
-    while len(polylinecolision) > 0 and stepup < maxstepup:
+    if keys[pygame.K_w]: p.jump=True
+    else: p.jump=False
 
-      player.y += 1
-      stepup += 1
+    p.move()
 
-      nextlinecolision = TheColidingLines(polylinecolision)
+    pygame.display.update()
 
-      polylinecolision = nextlinecolision
-        
-    if not stepup < maxstepup:
-      player.y -= stepup
-
-      player.x -= xvelosity
-
-      #while len(polylinecolision) > 0:
-      
-        #if xvelosity > 0:
-          #player.x -= 1
-        #else:
-          #player.x += 1
-          #print()
-        #nextlinecolision = []
-
-        #for z in range(0, len(polylinecolision), 4):
-          
-          #clip = player.clipline(polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3])
-          #if not clip:
-            
-            #nextlinecolision.extend([polylinecolision[z], polylinecolision[z + 1], polylinecolision[z + 2], polylinecolision[z + 3]])
-
-      #polylinecolision = nextlinecolision
-  
-    yvelosity -= gravity * deltaTime
-
-    player.y -= yvelosity
-
-    grounded = 0
-
-    for z in range(0, len(worldbox), 9):
-        worldb = pygame.Rect(worldbox[int(z)], worldbox[int(
-            z + 1)], worldbox[int(z + 2)], worldbox[int(z + 3)])
-        worldb.x = worldbox[z + 4]
-        worldb.y = worldbox[z + 5]
-
-        if player.colliderect(worldb) == 1:
-            if yvelosity > 0:
-                while player.colliderect(worldb) == 1:
-                    player.y += 1
-
-            else:
-                while player.colliderect(worldb) == 1:
-                    player.y -= 1
-                    grounded = 1
-            yvelosity = 1
-
-    player.centerx = player.centerx % window.get_width()
-    player.centery = player.centery % window.get_height()
-
-    window.fill([72, 127, 213])
-    pygame.draw.rect(window, (255, 75, 75), player)
-
-    for z in range(0, len(worldbox), 9):
-        worldb = pygame.Rect(
-            worldbox[z], worldbox[z + 1], worldbox[z + 2], worldbox[z + 3])
-        worldb.x = worldbox[z + 4]
-        worldb.y = worldbox[z + 5]
-        pygame.draw.rect(
-            window, (worldbox[z + 6], worldbox[z + 7], worldbox[z + 8]), worldb)
-
-    for z in range(0, len(worldpoly), 6):
-        pygame.draw.polygon(window, (255, 255, 255), [[worldpoly[z], worldpoly[z + 1]],
-                                                      [worldpoly[z + 2], worldpoly[z + 3]], [worldpoly[z + 4], worldpoly[z + 5]]])
-
-    pygame.display.flip()
 pygame.quit()
-exit()
