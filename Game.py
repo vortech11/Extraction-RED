@@ -1,4 +1,5 @@
 import pygame
+from stopwatch import Stopwatch
 
 pygame.init()
 W, H=500, 350
@@ -7,6 +8,7 @@ pygame_icon = pygame.image.load('Hammer Icon.png')
 pygame.display.set_icon(pygame_icon)
 pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
+
 running = True
 
 bcg=(200, 200, 200)
@@ -17,14 +19,13 @@ wall=(100, 100, 100)
 rectangles = []
 polygons = []
 
-rectangles.extend([0, 0, 500, 50, 0, 300, 31, 158, 27])
-rectangles.extend([0, 0, 50, 200, 0, 105, 70, 70, 70])
-rectangles.extend([0, 0, 50, 200, 450, 105, 70, 70, 70])
-rectangles.extend([0, 0, 100, 25, 200, 200, 45, 45, 45])
+rectangles.extend([0, 0, 800, 200, 0, 300, 31, 158, 27]) #main green floor
+rectangles.extend([0, 0, 50, 200, 0, 200, 70, 70, 70])
+rectangles.extend([0, 0, 50, 200, 450, 100, 70, 70, 70])
+rectangles.extend([0, 0, 100, 30, 200, 200, 50, 50, 50]) #start floating platform
 
 polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
-
-
+polygons.extend([590, 300, 720, 240, 720, 300, 719, 300])
 
 def collideLineLine(l1_p1, l1_p2, l2_p1, l2_p2):
 
@@ -79,23 +80,28 @@ class player:
             (x+list[z], list[z+1]+y), (x+list[z+2], list[z+3]+y), 
             (x+list[z+4], list[z+5]+y), (x+list[z+6], list[z+7]+y)]
 
-    def __init__(self, color, size=20, speed=.025, maxvelosity=9):
+    def __init__(self, color, size=20):
         self.x=0
         self.y=0
         self.col=color
         self.size=size
-        self.speed=speed
+        self.speed=.025
         self.xvelosity=0
         self.yvelosity=0
-        self.maxvelosity=maxvelosity
+        self.maxxvelosity=9
+        self.maxyvelosity=20
         self.direction=(0, 0)
         self.friction=0.5
         self.gravity=.025
         self.jump=False
-        self.grounded=True
         self.stepup=0
-        self.maxstepup=2
-
+        self.maxstepup=10
+        self.dash=False
+        self.candash=False
+        self.groundtimer = 0
+        self.dashtimer = Stopwatch()
+        self.noclip = False
+    
     def draw(self):
         s=self.size
         self.rect=pygame.Rect(W/2-s/2, H/2-s/2, self.size, self.size)
@@ -120,32 +126,46 @@ class player:
         else:
             return True
             
-    def move(self):
-        self.xvelosity += self.speed*self.direction*dt
-
-        if self.jump == True and self.grounded == True:
-            self.yvelosity = 100000
-            self.grounded = False
-
-        self.yvelosity -= self.gravity*dt
-        if abs(self.yvelosity) > self.maxvelosity:
-            if self.yvelosity > 0:
-                self.yvelosity = self.maxvelosity
-            else:
-                self.yvelosity = -self.maxvelosity
+    def gravitymove(self):
         
-        self.y += self.yvelosity
-        if self.allcolision():
-            self.y -= self.yvelosity
-            if self.yvelosity < 0:
-                self.grounded = True
-            else:
-                self.grounded = False
-            self.yvelosity = 0
+        self.xvelosity += self.speed*self.direction[0]*dt
+        
+        self.yvelosity -= self.gravity*dt
+        
+        if self.jump == True and self.groundtimer > 0:
+            self.yvelosity = 10
+            self.groundtimer = 0
 
-        if abs(self.xvelosity) > self.maxvelosity:
-            self.xvelosity = self.maxvelosity*self.direction
-        if self.direction==0:
+        if self.dash == True and self.candash == True and self.dashtimer.duration > 1:
+            if self.direction[0] != 0:
+                self.xvelosity = self.direction[0]*15
+            if self.direction[1] != 0:
+                self.yvelosity = self.direction[1]*8.5
+            if self.groundtimer > 0:
+                self.dashtimer.reset()
+                self.dashtimer.start()
+            self.candash = False
+            
+        if self.groundtimer > 2:
+            self.maxxvelosity = 9
+            self.maxyvelosity = 10
+            self.speed = .025
+            self.friction = .3
+        else:
+            self.maxxvelosity = 11
+            self.maxyvelosity = 30
+            self.speed = .025
+            self.friction = .3
+
+        if abs(self.yvelosity) > self.maxyvelosity:
+            if self.yvelosity > 0:
+                self.yvelosity = self.maxyvelosity
+            else:
+                self.yvelosity = -self.maxyvelosity
+
+        if abs(self.xvelosity) > self.maxxvelosity:
+            self.xvelosity = self.maxxvelosity*self.direction[0]
+        if self.direction[0]==0:
             if abs(self.xvelosity) < 0.35:
                 self.xvelosity = 0
             else:
@@ -153,20 +173,36 @@ class player:
                     self.xvelosity -= self.friction
                 else:
                     self.xvelosity += self.friction
-        
+
+        self.y += self.yvelosity
+        if self.allcolision():
+            self.y -= self.yvelosity
+            if self.yvelosity < 0:
+                self.groundtimer += 1
+                self.candash = True
+            else:
+                self.groundtimer = 0
+            self.yvelosity = 0
+
+
         self.x += self.xvelosity
         if self.allcolision():
             self.stepup = 0
-            while self.allcolision() and self.stepup < self.maxstepup*abs(self.xvelosity):
+            while self.allcolision() and self.stepup < self.maxstepup*(abs(self.xvelosity)/4):
                 self.y += 1
                 self.stepup += 1
-            if self.stepup >= self.maxstepup*abs(self.xvelosity):
+            if self.stepup >= self.maxstepup*(abs(self.xvelosity)/4):
                 self.y -= self.stepup
                 self.x -= self.xvelosity
                 self.xvelosity = 0
                 
-            
+    def noclipmove(self):
+        self.x += self.direction[0]*(self.dash+1)*3
+        self.y += self.direction[1]*(self.dash+1)*3
 
+
+clicking = 0
+e = 0
 p=player(red)
 while running:
     dt = clock.tick(60)
@@ -178,13 +214,39 @@ while running:
     p.draw()
 
     keys=pygame.key.get_pressed()
+    mousekey=pygame.mouse.get_pressed()
+    mousepos=pygame.mouse.get_pos()
     
-    p.direction = ((keys[pygame.K_a]-keys[pygame.K_d]))
+    
+    p.direction = ((keys[pygame.K_a]-keys[pygame.K_d]), (keys[pygame.K_w]-keys[pygame.K_s]))
 
-    if keys[pygame.K_w]: p.jump=True
+    if keys[pygame.K_SPACE]: p.jump=True
     else: p.jump=False
 
-    p.move()
+    if keys[pygame.K_LSHIFT]: p.dash=True
+    else: p.dash=False
+
+    if mousekey[0] and clicking == 0: 
+        clicking = 1
+        print(round(mousepos[0]-p.x, -1), round(mousepos[1]-p.y, -1))
+    if clicking == 1: 
+        if not(mousekey[0]):
+            clicking = 0
+    
+    if keys[pygame.K_r]: 
+        p.x=0 
+        p.y=0
+
+    if keys[pygame.K_e] and e == 0:
+        p.noclip = not p.noclip
+        e = 1
+    if not keys[pygame.K_e]:
+        e = 0
+    
+    if not p.noclip:
+        p.gravitymove()
+    else:
+        p.noclipmove()
 
     pygame.display.update()
 
