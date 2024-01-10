@@ -119,22 +119,23 @@ class player:
     
     def draw(self):
         #self.drawrect=pygame.Rect(W/2-self.xsize*renderxscale/2, H/2-self.ysize*renderyscale/2, self.xsize*renderxscale, self.ysize*renderyscale)
-        self.drawrect=pygame.Rect(camerax-self.x+W/2-self.xsize*renderxscale/2, cameray-self.y+H/2-self.ysize*renderyscale/2, 
-                                  self.xsize*renderxscale, self.ysize*renderyscale)
+        #self.drawrect=pygame.Rect(camerax-self.x+W/2-self.xsize*renderxscale/2, cameray-self.y+H/2-self.ysize*renderyscale/2, self.xsize*renderxscale, self.ysize*renderyscale)
+        self.drawrect=pygame.Rect((self.x+camerax)*renderxscale-self.xsize*renderxscale, (self.y+cameray)*renderxscale-self.ysize*renderyscale, self.xsize*renderxscale, self.ysize*renderyscale)
+        print(self.x+camerax)
         pygame.draw.rect(screen, self.col, self.drawrect)
 
     def allcolision(self):
         coliding = 0
-        self.rect=pygame.Rect(W/renderxscale*worldxscale+camerax-self.x/2-20/2, H/renderxscale*worldyscale+cameray-self.y/2-20/2, 20, 20)
+        self.rect=pygame.Rect((self.x+camerax)-self.xsize, (self.y+cameray)-self.ysize, self.xsize, self.ysize)
         for z in range(0, len(rectangles), 9):
             rectangle = pygame.Rect((rectangles[z], rectangles[z+1]), (rectangles[z+2], rectangles[z+3]))
-            rectangle.x = self.x+rectangles[z+4]
-            rectangle.y = self.y+rectangles[z+5]
+            rectangle.x = camerax+rectangles[z+4]
+            rectangle.y = cameray+rectangles[z+5]
             if rectangle.colliderect(self.rect):
                 coliding += 1
 
         for z in range(0, len(polygons), 8):
-            polygon = self.createworldPolygon(self.x, self.y, polygons, z)
+            polygon = self.createworldPolygon(camerax, cameray, polygons, z)
             if collideRectPolygon(self.rect, polygon):
                 coliding += 1
         
@@ -192,9 +193,9 @@ class player:
                 else:
                     self.xvelosity += self.friction
 
-        self.y += self.yvelosity
+        self.y -= self.yvelosity
         if self.allcolision():
-            self.y -= self.yvelosity
+            self.y += self.yvelosity
             if self.yvelosity < 0:
                 self.groundtimer += 1
                 self.candash = True
@@ -203,27 +204,27 @@ class player:
             self.yvelosity = 0
 
 
-        self.x += self.xvelosity
+        self.x -= self.xvelosity
         if self.allcolision():
             self.stepup = 0
             while self.allcolision() and self.stepup < self.maxstepup*(abs(self.xvelosity)/4):
-                self.y += 1
+                self.y -= 1
                 self.stepup += 1
             if self.stepup >= self.maxstepup*(abs(self.xvelosity)/4):
-                self.y -= self.stepup
-                self.x -= self.xvelosity
+                self.y += self.stepup
+                self.x += self.xvelosity
                 self.xvelosity = 0
                 
-        #camerax = self.x
-        #cameray = self.y
+        camerax = -self.x+W/2
+        cameray = -self.y+H/2
 
     def noclipmove(self):
         global camerax, cameray
-        self.x += self.direction[0]*(self.dash+1)*3
-        self.y += self.direction[1]*(self.dash+1)*3
+        self.x -= self.direction[0]*(self.dash+1)*3
+        self.y -= self.direction[1]*(self.dash+1)*3
 
-        #camerax = self.x
-        #cameray = self.y
+        camerax = -self.x+W/2
+        cameray = -self.y+H/2
 
 
 clicking = 0
