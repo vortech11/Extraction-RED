@@ -28,10 +28,15 @@ wall=(100, 100, 100)
 rectangles = []
 polygons = []
 
-rectangles.extend([0, 0, 800, 200, 0, 300, 31, 158, 27]) #main green floor
-rectangles.extend([0, 0, 100, 30, 200, 200, 50, 50, 50]) #start floating platform
-rectangles.extend([0, 0, 50, 200, 0, 200, 70, 70, 70])
-rectangles.extend([0, 0, 50, 200, 450, 100, 70, 70, 70])
+rectangles.extend([0, 300, 1000, 400, 31, 158, 27]) #main green floor
+rectangles.extend([200, 200, 100, 30, 50, 50, 50]) #start floating platform
+rectangles.extend([0, 200, 50, 200, 70, 70, 70])
+rectangles.extend([450, 100, 50, 200, 70, 70, 70])
+rectangles.extend([620, 80, 150, 30, 50, 50, 50])
+rectangles.extend([720, 240, 200, 60, 100, 100, 100])
+rectangles.extend([920, 120, 50, 180, 70, 70, 70])
+
+print(rectangles)
 
 polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
 polygons.extend([590, 300, 720, 240, 720, 300, 719, 300])
@@ -78,11 +83,9 @@ class player:
         for c in range(0, len(polygons), 8):
             self.poly = self.createrenderPolygon(camerax, cameray, polygons, c)
             pygame.draw.polygon(screen, wall, self.poly)
-        for c in range(0, len(rectangles), 9):
-            rectangle = pygame.Rect(rectangles[c]*renderxscale, rectangles[c+1]*renderyscale, rectangles[c+2]*renderxscale, rectangles[c+3]*renderyscale)
-            rectangle.x = (camerax+rectangles[c+4])*renderxscale
-            rectangle.y = (cameray+rectangles[c+5])*renderxscale
-            pygame.draw.rect(screen, (rectangles[c+6], rectangles[c+7], rectangles[c+8]), rectangle)
+        for c in range(0, len(rectangles), 7):
+            rectangle = pygame.Rect((rectangles[c]+camerax)*renderxscale, (rectangles[c+1]+cameray)*renderyscale, rectangles[c+2]*renderxscale, rectangles[c+3]*renderyscale)
+            pygame.draw.rect(screen, (rectangles[c+4], rectangles[c+5], rectangles[c+6]), rectangle)
   
     def createworldPolygon(self, list, z):
         return [
@@ -126,10 +129,8 @@ class player:
     def allcolision(self):
         coliding = 0
         self.rect=pygame.Rect((self.x)-self.xsize, (self.y)-self.ysize, self.xsize, self.ysize)
-        for z in range(0, len(rectangles), 9):
+        for z in range(0, len(rectangles), 7):
             rectangle = pygame.Rect((rectangles[z], rectangles[z+1]), (rectangles[z+2], rectangles[z+3]))
-            rectangle.x = rectangles[z+4]
-            rectangle.y = rectangles[z+5]
             if rectangle.colliderect(self.rect):
                 coliding += 1
 
@@ -182,7 +183,10 @@ class player:
                 self.yvelosity = -self.maxyvelosity
 
         if abs(self.xvelosity) > self.maxxvelosity:
-            self.xvelosity = self.maxxvelosity*self.direction[0]
+            if self.xvelosity < 0:
+                self.xvelosity = -self.maxxvelosity
+            else:
+                self.xvelosity = self.maxxvelosity
         if self.direction[0]==0:
             if abs(self.xvelosity) < 0.35:
                 self.xvelosity = 0
@@ -227,7 +231,7 @@ class player:
 
 
 clicking = 0
-e = 0
+v = 0
 p=player(red)
 while running:
     dt = clock.tick(60)
@@ -258,7 +262,7 @@ while running:
         if not(mousekey[0]):
             clicking = 0
     
-    if keys[pygame.K_r]: 
+    if keys[pygame.K_f]: 
         p.x=300*renderxscale 
         p.y=200*renderyscale
 
@@ -270,11 +274,11 @@ while running:
         renderxscale += .0125
         renderyscale += .0125
 
-    if keys[pygame.K_e] and e == 0:
+    if keys[pygame.K_v] and v == 0:
         p.noclip = not p.noclip
-        e = 1
-    if not keys[pygame.K_e]:
-        e = 0
+        v = 1
+    if not keys[pygame.K_v]:
+        v = 0
     
     if not p.noclip:
         p.gravitymove()
