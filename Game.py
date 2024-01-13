@@ -36,8 +36,6 @@ rectangles.extend([620, 80, 150, 30, 50, 50, 50])
 rectangles.extend([720, 240, 200, 60, 100, 100, 100])
 rectangles.extend([920, 120, 50, 180, 70, 70, 70])
 
-print(rectangles)
-
 polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
 polygons.extend([590, 300, 720, 240, 720, 300, 719, 300])
 
@@ -113,7 +111,7 @@ class player:
         self.gravity=.025
         self.jump=False
         self.stepup=0
-        self.maxstepup=10
+        self.maxstepup=1
         self.dash=False
         self.candash=False
         self.groundtimer = 0
@@ -147,8 +145,13 @@ class player:
     def gravitymove(self):
         global camerax, cameray
 
+        oldxvelosity = self.xvelosity
         self.xvelosity += self.speed*self.direction[0]*dt
         
+        if abs(self.xvelosity) > self.maxxvelosity:
+            if abs(oldxvelosity) < abs(self.xvelosity):
+                self.xvelosity -= self.speed*self.direction[0]*dt
+
         self.yvelosity -= self.gravity*dt
         
         if self.jump == True and self.groundtimer > 0:
@@ -176,17 +179,8 @@ class player:
             self.speed = .025
             self.friction = .2
 
-        if abs(self.yvelosity) > self.maxyvelosity:
-            if self.yvelosity > 0:
-                self.yvelosity = self.maxyvelosity
-            else:
-                self.yvelosity = -self.maxyvelosity
+        
 
-        if abs(self.xvelosity) > self.maxxvelosity:
-            if self.xvelosity < 0:
-                self.xvelosity = -self.maxxvelosity
-            else:
-                self.xvelosity = self.maxxvelosity
         if self.direction[0]==0:
             if abs(self.xvelosity) < 0.35:
                 self.xvelosity = 0
@@ -206,17 +200,20 @@ class player:
                 self.groundtimer = 0
             self.yvelosity = 0
 
-
         self.x -= self.xvelosity
         if self.allcolision():
             self.stepup = 0
-            while self.allcolision() and self.stepup < self.maxstepup*(abs(self.xvelosity)/4):
+            while self.allcolision() and self.stepup < self.maxstepup*abs(self.xvelosity):
                 self.y -= 1
                 self.stepup += 1
-            if self.stepup >= self.maxstepup*(abs(self.xvelosity)/4):
+            if self.stepup >= self.maxstepup*abs(self.xvelosity):
                 self.y += self.stepup
                 self.x += self.xvelosity
                 self.xvelosity = 0
+            else:
+                self.yvelosity = self.stepup
+
+                
                 
         camerax = -self.x+W/renderxscale/2
         cameray = -self.y+H/renderyscale/2
@@ -263,16 +260,16 @@ while running:
             clicking = 0
     
     if keys[pygame.K_f]: 
-        p.x=300*renderxscale 
-        p.y=200*renderyscale
+        p.x=260
+        p.y=180
 
     if keys[pygame.K_o]:
-        renderxscale -= .0125
-        renderyscale -= .0125
+        renderxscale /= 1.0125
+        renderyscale /= 1.0125
 
     if keys[pygame.K_p]:
-        renderxscale += .0125
-        renderyscale += .0125
+        renderxscale *= 1.0125
+        renderyscale *= 1.0125
 
     if keys[pygame.K_v] and v == 0:
         p.noclip = not p.noclip
