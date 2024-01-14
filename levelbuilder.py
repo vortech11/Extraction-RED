@@ -28,8 +28,8 @@ for x in range(0, len(rectangles), 7):
     print(int(x/7+1))
 
 for x in range(0, len(polygons), 8):
-    Geometry["tri"]["tri"+str(int(x/7+1))] = {}
-    Geometry["tri"]["tri"+str(int(x/7+1))]["points"] = [polygons[x], polygons[x+1], polygons[x+2], polygons[x+3], polygons[x+4], polygons[x+5], polygons[x+6], polygons[x+7]]
+    Geometry["tri"]["tri"+str(int(x/8+1))] = {}
+    Geometry["tri"]["tri"+str(int(x/8+1))]["points"] = [polygons[x], polygons[x+1], polygons[x+2], polygons[x+3], polygons[x+4], polygons[x+5], polygons[x+6], polygons[x+7]]
     print(int(x/7+1)) 
 
 levelfile = open("level.json", "w")

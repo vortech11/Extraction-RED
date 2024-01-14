@@ -1,4 +1,4 @@
-import pygame
+import pygame, json
 from stopwatch import Stopwatch
 
 worldxscale = 1
@@ -25,19 +25,9 @@ red=(255, 0 ,0)
 purp=(255, 0, 255)
 wall=(100, 100, 100)
 
-rectangles = []
-polygons = []
-
-rectangles.extend([0, 300, 1000, 400, 31, 158, 27]) #main green floor
-rectangles.extend([200, 200, 100, 30, 50, 50, 50]) #start floating platform
-rectangles.extend([0, 200, 50, 200, 70, 70, 70])
-rectangles.extend([450, 100, 50, 200, 70, 70, 70])
-rectangles.extend([620, 80, 150, 30, 50, 50, 50])
-rectangles.extend([720, 240, 200, 60, 100, 100, 100])
-rectangles.extend([920, 120, 50, 180, 70, 70, 70])
-
-polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
-polygons.extend([590, 300, 720, 240, 720, 300, 719, 300])
+with open("level.json", "r") as levelfile:
+    leveldict = json.load(levelfile)
+    levelfile.close()
 
 def collideLineLine(l1_p1, l1_p2, l2_p1, l2_p2):
 
@@ -78,22 +68,22 @@ def collideRectPolygon(rect, polygon):
 class player:
     def bg(self):        
         screen.fill((200, 200, 200))
-        for c in range(0, len(polygons), 8):
-            self.poly = self.createrenderPolygon(camerax, cameray, polygons, c)
+        for c in range(0, len(leveldict['tri'])):
+            self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri']['tri'+str(c+1)]['points'])
             pygame.draw.polygon(screen, wall, self.poly)
-        for c in range(0, len(rectangles), 7):
-            rectangle = pygame.Rect((rectangles[c]+camerax)*renderxscale, (rectangles[c+1]+cameray)*renderyscale, rectangles[c+2]*renderxscale, rectangles[c+3]*renderyscale)
-            pygame.draw.rect(screen, (rectangles[c+4], rectangles[c+5], rectangles[c+6]), rectangle)
+        for c in range(0, len(leveldict['rect'])):
+            rectangle = pygame.Rect((leveldict['rect']['rect'+str(c+1)]['points'][0]+camerax)*renderxscale, (leveldict['rect']['rect'+str(c+1)]['points'][1]+cameray)*renderyscale, leveldict['rect']['rect'+str(c+1)]['points'][2]*renderxscale, leveldict['rect']['rect'+str(c+1)]['points'][3]*renderyscale)
+            pygame.draw.rect(screen, (leveldict['rect']['rect'+str(c+1)]['color'][0], leveldict['rect']['rect'+str(c+1)]['color'][1], leveldict['rect']['rect'+str(c+1)]['color'][2]), rectangle)
   
-    def createworldPolygon(self, list, z):
+    def createworldPolygon(self, list):
         return [
-            (list[z], list[z+1]), (list[z+2], list[z+3]), 
-            (list[z+4], list[z+5]), (list[z+6], list[z+7])]
+            (list[0], list[1]), (list[2], list[3]), 
+            (list[4], list[5]), (list[6], list[7])]
     
-    def createrenderPolygon(self, x, y, list, z):
+    def createrenderPolygon(self, x, y, list):
         return [
-            ((x+list[z])*renderxscale, (list[z+1]+y)*renderyscale), ((x+list[z+2])*renderxscale, (list[z+3]+y)*renderyscale), 
-            ((x+list[z+4])*renderxscale, (list[z+5]+y)*renderyscale), ((x+list[z+6])*renderxscale, (list[z+7]+y)*renderyscale)]
+            ((x+list[0])*renderxscale, (list[1]+y)*renderyscale), ((x+list[2])*renderxscale, (list[3]+y)*renderyscale), 
+            ((x+list[4])*renderxscale, (list[5]+y)*renderyscale), ((x+list[6])*renderxscale, (list[7]+y)*renderyscale)]
 
     def __init__(self, color):
         self.x=250*renderxscale
@@ -127,13 +117,13 @@ class player:
     def allcolision(self):
         coliding = 0
         self.rect=pygame.Rect((self.x)-self.xsize, (self.y)-self.ysize, self.xsize, self.ysize)
-        for z in range(0, len(rectangles), 7):
-            rectangle = pygame.Rect((rectangles[z], rectangles[z+1]), (rectangles[z+2], rectangles[z+3]))
+        for z in range(0, len(leveldict['rect'])):
+            rectangle = pygame.Rect((leveldict['rect']['rect'+str(z+1)]['points'][0], leveldict['rect']['rect'+str(z+1)]['points'][1]), (leveldict['rect']['rect'+str(z+1)]['points'][2], leveldict['rect']['rect'+str(z+1)]['points'][3]))
             if rectangle.colliderect(self.rect):
                 coliding += 1
 
-        for z in range(0, len(polygons), 8):
-            polygon = self.createworldPolygon(polygons, z)
+        for z in range(0, len(leveldict['tri'])):
+            polygon = self.createworldPolygon(leveldict['tri']['tri'+str(z+1)]['points'])
             if collideRectPolygon(self.rect, polygon):
                 coliding += 1
         
@@ -160,7 +150,7 @@ class player:
 
         if self.dash == True and self.candash == True and self.dashtimer.duration > 1:
             if self.direction[0] != 0:
-                self.xvelosity = self.direction[0]*15
+                self.xvelosity = self.direction[0]*12.5
             if self.direction[1] != 0:
                 self.yvelosity = self.direction[1]*10
             if self.groundtimer > 0:
@@ -211,7 +201,7 @@ class player:
                 self.x += self.xvelosity
                 self.xvelosity = 0
             else:
-                self.yvelosity = self.stepup
+                self.yvelosity = self.stepup*1.5
 
                 
                 
