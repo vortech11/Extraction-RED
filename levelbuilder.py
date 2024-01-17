@@ -32,6 +32,12 @@ for x in range(0, len(polygons), 8):
     Geometry["tri"]["tri"+str(int(x/8+1))]["points"] = [polygons[x], polygons[x+1], polygons[x+2], polygons[x+3], polygons[x+4], polygons[x+5], polygons[x+6], polygons[x+7]]
     print(int(x/7+1)) 
 
+Geometry["player"] = {}
+Geometry["player"]["startpos"] = [250, 170]
+Geometry["player"]["save"] = {}
+Geometry["player"]["save"]["pos"] = Geometry["player"]["startpos"]
+Geometry["player"]["save"]["velosity"] = [0, 0]
+
 levelfile = open("level.json", "w")
 json.dump(Geometry, levelfile, indent=6)
 levelfile.close()

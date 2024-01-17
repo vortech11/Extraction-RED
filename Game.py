@@ -1,8 +1,6 @@
 import pygame, json
 from stopwatch import Stopwatch
 
-worldxscale = 1
-worldyscale = 1
 renderxscale = 1
 renderyscale = 1
 
@@ -17,6 +15,8 @@ pygame_icon = pygame.image.load('Hammer Icon.png')
 pygame.display.set_icon(pygame_icon)
 pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
+
+font = pygame.font.SysFont("Arial" , 12 , bold = True)
 
 running = True
 
@@ -65,6 +65,71 @@ def collideRectPolygon(rect, polygon):
             return True
     return False
 
+def playerinput():
+    global renderxscale, renderyscale, clicking, v, a, s
+    keys=pygame.key.get_pressed()
+    mousekey=pygame.mouse.get_pressed()
+    mousepos=pygame.mouse.get_pos()
+
+    p.direction = ((keys[pygame.K_LEFT]-keys[pygame.K_RIGHT]), (keys[pygame.K_UP]-keys[pygame.K_DOWN]))
+
+    if keys[pygame.K_z]: p.jump=True
+    else: p.jump=False
+
+    if keys[pygame.K_c]: p.dash=True
+    else: p.dash=False
+
+    if mousekey[0] and clicking == 0: 
+        clicking = 1
+        print(round(mousepos[0]-camerax, -1), round(mousepos[1]-cameray, -1))
+    if clicking == 1: 
+        if not(mousekey[0]):
+            clicking = 0
+    
+    if keys[pygame.K_f]: 
+        p.x=leveldict['player']['startpos'][0]
+        p.y=leveldict['player']['startpos'][1]
+
+    if keys[pygame.K_o]:
+        renderxscale /= 1.0125
+        renderyscale /= 1.0125
+
+    if keys[pygame.K_p]:
+        renderxscale *= 1.0125
+        renderyscale *= 1.0125
+
+    if keys[pygame.K_v] and v == 0:
+        p.noclip = not p.noclip
+        v = 1
+    if not keys[pygame.K_v]:
+        v = 0
+    
+    if keys[pygame.K_a] and a == 0:
+        leveldict['player']['save']['pos'] = [p.x, p.y]
+        leveldict['player']['save']['velosity'] = [p.xvelosity, p.yvelosity]
+        a = 1
+    if not keys[pygame.K_a]:
+        a = 0
+
+    if keys[pygame.K_s] and s == 0:
+        p.x = leveldict['player']['save']['pos'][0]
+        p.y = leveldict['player']['save']['pos'][1]
+        p.xvelosity = leveldict['player']['save']['velosity'][0]
+        p.yvelosity = leveldict['player']['save']['velosity'][1]
+        s = 1
+    if not keys[pygame.K_s]:
+        s = 0
+
+    if not p.noclip:
+        p.gravitymove()
+    else:
+        p.noclipmove()
+
+def fps_counter():
+    fps = str(int(clock.get_fps()))
+    fps_t = font.render(fps , 1, pygame.Color("RED"))
+    screen.blit(fps_t,(0,0))
+
 class player:
     def bg(self):        
         screen.fill((200, 200, 200))
@@ -86,8 +151,8 @@ class player:
             ((x+list[4])*renderxscale, (list[5]+y)*renderyscale), ((x+list[6])*renderxscale, (list[7]+y)*renderyscale)]
 
     def __init__(self, color):
-        self.x=250*renderxscale
-        self.y=170*renderyscale
+        self.x=leveldict["player"]["startpos"][0]
+        self.y=leveldict["player"]["startpos"][1]
         self.col=color
         self.xsize=20
         self.ysize=20
@@ -109,8 +174,6 @@ class player:
         self.noclip = False
     
     def draw(self):
-        #self.drawrect=pygame.Rect(W/2-self.xsize*renderxscale/2, H/2-self.ysize*renderyscale/2, self.xsize*renderxscale, self.ysize*renderyscale)
-        #self.drawrect=pygame.Rect(camerax-self.x+W/2-self.xsize*renderxscale/2, cameray-self.y+H/2-self.ysize*renderyscale/2, self.xsize*renderxscale, self.ysize*renderyscale)
         self.drawrect=pygame.Rect((self.x+camerax)*renderxscale-self.xsize*renderxscale, (self.y+cameray)*renderxscale-self.ysize*renderyscale, self.xsize*renderxscale, self.ysize*renderyscale)
         pygame.draw.rect(screen, self.col, self.drawrect)
 
@@ -193,20 +256,19 @@ class player:
         self.x -= self.xvelosity
         if self.allcolision():
             self.stepup = 0
-            while self.allcolision() and self.stepup < self.maxstepup*abs(self.xvelosity):
+            while self.allcolision() and self.stepup < self.maxstepup*abs(self.xvelosity)+1:
                 self.y -= 1
                 self.stepup += 1
-            if self.stepup >= self.maxstepup*abs(self.xvelosity):
+            if self.stepup >= self.maxstepup*abs(self.xvelosity)+1:
                 self.y += self.stepup
                 self.x += self.xvelosity
                 self.xvelosity = 0
             else:
                 self.yvelosity = self.stepup*1.5
-
                 
                 
-        camerax = -self.x+W/renderxscale/2
-        cameray = -self.y+H/renderyscale/2
+        camerax += (-self.x-camerax+W/renderxscale/2)/4
+        cameray += (-self.y-cameray+H/renderyscale/2)/4
 
     def noclipmove(self):
         global camerax, cameray
@@ -229,49 +291,9 @@ while running:
     p.bg()
     p.draw()
 
-    keys=pygame.key.get_pressed()
-    mousekey=pygame.mouse.get_pressed()
-    mousepos=pygame.mouse.get_pos()
+    playerinput()
     
-
-    p.direction = ((keys[pygame.K_LEFT]-keys[pygame.K_RIGHT]), (keys[pygame.K_UP]-keys[pygame.K_DOWN]))
-
-    if keys[pygame.K_z]: p.jump=True
-    else: p.jump=False
-
-    if keys[pygame.K_c]: p.dash=True
-    else: p.dash=False
-
-    if mousekey[0] and clicking == 0: 
-        clicking = 1
-        print(round(mousepos[0]-camerax, -1), round(mousepos[1]-cameray, -1))
-    if clicking == 1: 
-        if not(mousekey[0]):
-            clicking = 0
-    
-    if keys[pygame.K_f]: 
-        p.x=260
-        p.y=180
-
-    if keys[pygame.K_o]:
-        renderxscale /= 1.0125
-        renderyscale /= 1.0125
-
-    if keys[pygame.K_p]:
-        renderxscale *= 1.0125
-        renderyscale *= 1.0125
-
-    if keys[pygame.K_v] and v == 0:
-        p.noclip = not p.noclip
-        v = 1
-    if not keys[pygame.K_v]:
-        v = 0
-    
-    if not p.noclip:
-        p.gravitymove()
-    else:
-        p.noclipmove()
-
+    fps_counter()
     pygame.display.update()
 
 pygame.quit()
