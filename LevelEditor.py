@@ -36,6 +36,7 @@ with open("level.json", "r") as levelfile:
 
 def playerinput():
     global renderxscale, renderyscale, clicking, v, objectedit, editstatus
+    tobedeleted = []
     keys=pygame.key.get_pressed()
     mousekey=pygame.mouse.get_pressed()
     mousepos=pygame.mouse.get_pos()
@@ -47,24 +48,21 @@ def playerinput():
 
     if mousekey[0] and editstatus == 0:
         if keys[pygame.K_r]:
-            objectedit = len(leveldict['rect'])+1
-            leveldict['rect']['rect'+str(objectedit)] = {}
-            leveldict['rect']['rect'+str(objectedit)]["points"] = [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]
-            leveldict['rect']['rect'+str(objectedit)]["color"] = [70, 70, 70]
+            objectedit = len(leveldict['rect'])
+            leveldict['rect'].append([{"points": [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]}, {"color": [70, 70, 70]}])
             editstatus = 1
         elif keys[pygame.K_d]:
-            for x in range(1, len(leveldict['rect'])):
-                rectangle = pygame.Rect(leveldict['rect']['rect'+str(x)]['points'][0], leveldict['rect']['rect'+str(x)]['points'][1], leveldict['rect']['rect'+str(x)]['points'][2], leveldict['rect']['rect'+str(x)]['points'][3])
+            for x in range(len(leveldict['rect'])):
+                rectangle = pygame.Rect(leveldict['rect'][x][0]['points'][0], leveldict['rect'][x][0]['points'][1], leveldict['rect'][x][0]['points'][2], leveldict['rect'][x][0]['points'][3])
                 if rectangle.collidepoint(mousepos[0]-camerax, mousepos[1]-cameray):
-                    del leveldict['rect']['rect'+str(x)]
-                    updateddict = {}
-                    for i, value in enumerate(leveldict['rect'].items(), start=1):
-                        updateddict["rect" + str(i)] = value
-                    leveldict['rect'] = updateddict
+                    tobedeleted.append(x)
+            if len(tobedeleted) > 0:
+                for x in range(len(tobedeleted)):
+                    del leveldict['rect'][tobedeleted[x]]
 
     if editstatus == 1:
-        leveldict['rect']['rect'+str(objectedit)]["points"][2] = round(mousepos[0], -1)-camerax-leveldict['rect']['rect'+str(objectedit)]["points"][0]
-        leveldict['rect']['rect'+str(objectedit)]["points"][3] = round(mousepos[1], -1)-cameray-leveldict['rect']['rect'+str(objectedit)]["points"][1]
+        leveldict['rect'][objectedit][0]["points"][2] = round(mousepos[0], -1)-camerax-leveldict['rect'][objectedit][0]["points"][0]
+        leveldict['rect'][objectedit][0]["points"][3] = round(mousepos[1], -1)-cameray-leveldict['rect'][objectedit][0]["points"][1]
         if mousekey[0] and not keys[pygame.K_r]:
             editstatus = 0
     
@@ -91,11 +89,11 @@ class player:
     def bg(self):        
         screen.fill((200, 200, 200))
         for c in range(0, len(leveldict['tri'])):
-            self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri']['tri'+str(c+1)]['points'])
+            self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri'][c][0]['points'])
             pygame.draw.polygon(screen, wall, self.poly)
         for c in range(0, len(leveldict['rect'])):
-            rectangle = pygame.Rect((leveldict['rect']['rect'+str(c+1)]['points'][0]+camerax)*renderxscale, (leveldict['rect']['rect'+str(c+1)]['points'][1]+cameray)*renderyscale, leveldict['rect']['rect'+str(c+1)]['points'][2]*renderxscale, leveldict['rect']['rect'+str(c+1)]['points'][3]*renderyscale)
-            pygame.draw.rect(screen, (leveldict['rect']['rect'+str(c+1)]['color'][0], leveldict['rect']['rect'+str(c+1)]['color'][1], leveldict['rect']['rect'+str(c+1)]['color'][2]), rectangle)
+            rectangle = pygame.Rect((leveldict['rect'][c][0]['points'][0]+camerax)*renderxscale, (leveldict['rect'][c][0]['points'][1]+cameray)*renderyscale, leveldict['rect'][c][0]['points'][2]*renderxscale, leveldict['rect'][c][0]['points'][3]*renderyscale)
+            pygame.draw.rect(screen, (leveldict['rect'][c][1]['color'][0], leveldict['rect'][c][1]['color'][1], leveldict['rect'][c][1]['color'][2]), rectangle)
     
     def createrenderPolygon(self, x, y, list):
         return [

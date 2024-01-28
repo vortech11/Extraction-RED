@@ -15,22 +15,17 @@ polygons.extend([350, 300, 450, 250, 450, 300, 450, 301])
 polygons.extend([590, 300, 720, 240, 720, 300, 719, 300])
 
 Geometry = {
-    "rect": {
-    },
-    "tri": {
-    }
+    "rect": [
+    ],
+    "tri": [
+    ]
 }
 
 for x in range(0, len(rectangles), 7):
-    Geometry["rect"]["rect"+str(int(x/7+1))] = {}
-    Geometry["rect"]["rect"+str(int(x/7+1))]["points"] = [rectangles[x], rectangles[x+1], rectangles[x+2], rectangles[x+3]]
-    Geometry["rect"]["rect"+str(int(x/7+1))]["color"] = [rectangles[x+4], rectangles[x+5], rectangles[x+6]]
-    print(int(x/7+1))
+    Geometry["rect"].append([{"points": [rectangles[x], rectangles[x+1], rectangles[x+2], rectangles[x+3]]}, {"color": [rectangles[x+4], rectangles[x+5], rectangles[x+6]]}])
 
 for x in range(0, len(polygons), 8):
-    Geometry["tri"]["tri"+str(int(x/8+1))] = {}
-    Geometry["tri"]["tri"+str(int(x/8+1))]["points"] = [polygons[x], polygons[x+1], polygons[x+2], polygons[x+3], polygons[x+4], polygons[x+5], polygons[x+6], polygons[x+7]]
-    print(int(x/7+1)) 
+    Geometry["tri"].append([{"points": [polygons[x], polygons[x+1], polygons[x+2], polygons[x+3], polygons[x+4], polygons[x+5], polygons[x+6], polygons[x+7]]}])
 
 Geometry["player"] = {}
 Geometry["player"]["startpos"] = [250, 170]

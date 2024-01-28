@@ -134,11 +134,11 @@ class player:
     def bg(self):        
         screen.fill((200, 200, 200))
         for c in range(0, len(leveldict['tri'])):
-            self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri']['tri'+str(c+1)]['points'])
+            self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri'][c][0]['points'])
             pygame.draw.polygon(screen, wall, self.poly)
         for c in range(0, len(leveldict['rect'])):
-            rectangle = pygame.Rect((leveldict['rect']['rect'+str(c+1)]['points'][0]+camerax)*renderxscale, (leveldict['rect']['rect'+str(c+1)]['points'][1]+cameray)*renderyscale, leveldict['rect']['rect'+str(c+1)]['points'][2]*renderxscale, leveldict['rect']['rect'+str(c+1)]['points'][3]*renderyscale)
-            pygame.draw.rect(screen, (leveldict['rect']['rect'+str(c+1)]['color'][0], leveldict['rect']['rect'+str(c+1)]['color'][1], leveldict['rect']['rect'+str(c+1)]['color'][2]), rectangle)
+            rectangle = pygame.Rect((leveldict['rect'][c][0]['points'][0]+camerax)*renderxscale, (leveldict['rect'][c][0]['points'][1]+cameray)*renderyscale, leveldict['rect'][c][0]['points'][2]*renderxscale, leveldict['rect'][c][0]['points'][3]*renderyscale)
+            pygame.draw.rect(screen, (leveldict['rect'][c][1]['color'][0], leveldict['rect'][c][1]['color'][1], leveldict['rect'][c][1]['color'][2]), rectangle)
   
     def createworldPolygon(self, list):
         return [
@@ -181,12 +181,12 @@ class player:
         coliding = 0
         self.rect=pygame.Rect((self.x)-self.xsize, (self.y)-self.ysize, self.xsize, self.ysize)
         for z in range(0, len(leveldict['rect'])):
-            rectangle = pygame.Rect((leveldict['rect']['rect'+str(z+1)]['points'][0], leveldict['rect']['rect'+str(z+1)]['points'][1]), (leveldict['rect']['rect'+str(z+1)]['points'][2], leveldict['rect']['rect'+str(z+1)]['points'][3]))
+            rectangle = pygame.Rect((leveldict['rect'][z][0]['points'][0], leveldict['rect'][z][0]['points'][1]), (leveldict['rect'][z][0]['points'][2], leveldict['rect'][z][0]['points'][3]))
             if rectangle.colliderect(self.rect):
                 coliding += 1
 
         for z in range(0, len(leveldict['tri'])):
-            polygon = self.createworldPolygon(leveldict['tri']['tri'+str(z+1)]['points'])
+            polygon = self.createworldPolygon(leveldict['tri'][z][0]['points'])
             if collideRectPolygon(self.rect, polygon):
                 coliding += 1
         
