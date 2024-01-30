@@ -10,6 +10,7 @@ cameray = 0
 editstatus = 0
 objectedit = 0
 pointedit = 0
+posoffset = [0, 0]
 
 pygame.init()
 W, H=800, 450
@@ -35,8 +36,7 @@ with open("level.json", "r") as levelfile:
 
 
 def playerinput():
-    global renderxscale, renderyscale, clicking, v, objectedit, editstatus
-    tobedeleted = []
+    global renderxscale, renderyscale, clicking, v, objectedit, editstatus, posoffset
     keys=pygame.key.get_pressed()
     mousekey=pygame.mouse.get_pressed()
     mousepos=pygame.mouse.get_pos()
@@ -51,7 +51,17 @@ def playerinput():
             objectedit = len(leveldict['rect'])
             leveldict['rect'].append([{"points": [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]}, {"color": [70, 70, 70]}])
             editstatus = 1
+        
+        elif keys[pygame.K_m]:
+            for x in range(len(leveldict['rect'])):
+                rectangle = pygame.Rect(leveldict['rect'][x][0]['points'][0], leveldict['rect'][x][0]['points'][1], leveldict['rect'][x][0]['points'][2], leveldict['rect'][x][0]['points'][3])
+                if rectangle.collidepoint(mousepos[0]-camerax, mousepos[1]-cameray):
+                    editstatus = 2
+                    objectedit = x
+                    #posoffset = [round(leveldict['rect'][x][0]['points'][0]+mousepos[0]-camerax, -1), -round(leveldict['rect'][x][0]['points'][1]+mousepos[1]-cameray, -1)]
+        
         elif keys[pygame.K_d]:
+            tobedeleted = []
             for x in range(len(leveldict['rect'])):
                 rectangle = pygame.Rect(leveldict['rect'][x][0]['points'][0], leveldict['rect'][x][0]['points'][1], leveldict['rect'][x][0]['points'][2], leveldict['rect'][x][0]['points'][3])
                 if rectangle.collidepoint(mousepos[0]-camerax, mousepos[1]-cameray):
@@ -61,9 +71,15 @@ def playerinput():
                     del leveldict['rect'][tobedeleted[x]]
 
     if editstatus == 1:
-        leveldict['rect'][objectedit][0]["points"][2] = round(mousepos[0], -1)-camerax-leveldict['rect'][objectedit][0]["points"][0]
-        leveldict['rect'][objectedit][0]["points"][3] = round(mousepos[1], -1)-cameray-leveldict['rect'][objectedit][0]["points"][1]
+        leveldict['rect'][objectedit][0]["points"][2] = round(mousepos[0]-camerax-leveldict['rect'][objectedit][0]["points"][0], -1)
+        leveldict['rect'][objectedit][0]["points"][3] = round(mousepos[1]-cameray-leveldict['rect'][objectedit][0]["points"][1], -1)
         if mousekey[0] and not keys[pygame.K_r]:
+            editstatus = 0
+    
+    if editstatus == 2:
+        leveldict['rect'][objectedit][0]["points"][0] = round(mousepos[0]-camerax-posoffset[0], -1)
+        leveldict['rect'][objectedit][0]["points"][1] = round(mousepos[1]-cameray-posoffset[1], -1)
+        if mousekey[0] and not keys[pygame.K_m]:
             editstatus = 0
     
     if keys[pygame.K_f]: 
