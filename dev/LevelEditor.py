@@ -1,4 +1,4 @@
-import pygame, json
+import pygame, json, os
 from stopwatch import Stopwatch
 
 renderxscale = 1
@@ -11,6 +11,7 @@ editstatus = 0
 objectedit = 0
 pointedit = 0
 posoffset = [0, 0]
+enter = 0
 
 pygame.init()
 W, H=800, 450
@@ -30,13 +31,16 @@ red=(255, 0 ,0)
 purp=(255, 0, 255)
 wall=(100, 100, 100)
 
-with open("level.json", "r") as levelfile:
+script_directory = os.path.dirname(os.path.abspath(__file__))
+json_file_path = os.path.join(script_directory, "../levels/level.json")
+
+with open(json_file_path, "r") as levelfile:
     leveldict = json.load(levelfile)
     levelfile.close()
 
 
 def playerinput():
-    global renderxscale, renderyscale, clicking, v, objectedit, editstatus, posoffset
+    global renderxscale, renderyscale, clicking, v, objectedit, editstatus, posoffset, enter
     keys=pygame.key.get_pressed()
     mousekey=pygame.mouse.get_pressed()
     mousepos=pygame.mouse.get_pos()
@@ -45,6 +49,13 @@ def playerinput():
 
     if keys[pygame.K_c]: p.dash=True
     else: p.dash=False
+
+    if keys[pygame.K_RETURN] and enter == 0:
+        file = open("level.json", "w")
+        json.dump(leveldict, file, indent=6)
+        file.close()
+        enter = 1
+    if not keys[pygame.K_RETURN] and enter == 1: enter = 0
 
     if mousekey[0] and editstatus == 0:
         if keys[pygame.K_r]:

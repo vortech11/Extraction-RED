@@ -1,4 +1,4 @@
-import pygame, json
+import pygame, json, os
 from stopwatch import Stopwatch
 
 renderxscale = 1
@@ -25,7 +25,9 @@ red=(255, 0 ,0)
 purp=(255, 0, 255)
 wall=(100, 100, 100)
 
-with open("level.json", "r") as levelfile:
+script_directory = os.path.dirname(os.path.abspath(__file__))
+json_file_path = os.path.join(script_directory, "levels/level.json")
+with open(json_file_path, "r") as levelfile:
     leveldict = json.load(levelfile)
     levelfile.close()
 
@@ -135,7 +137,7 @@ class player:
         screen.fill((200, 200, 200))
         for c in range(0, len(leveldict['tri'])):
             self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri'][c][0]['points'])
-            pygame.draw.polygon(screen, wall, self.poly)
+            pygame.draw.polygon(screen, (leveldict["tri"][c][1]['color'][0], leveldict["tri"][c][1]['color'][1], leveldict["tri"][c][1]['color'][2]), self.poly)
         for c in range(0, len(leveldict['rect'])):
             rectangle = pygame.Rect((leveldict['rect'][c][0]['points'][0]+camerax)*renderxscale, (leveldict['rect'][c][0]['points'][1]+cameray)*renderyscale, leveldict['rect'][c][0]['points'][2]*renderxscale, leveldict['rect'][c][0]['points'][3]*renderyscale)
             pygame.draw.rect(screen, (leveldict['rect'][c][1]['color'][0], leveldict['rect'][c][1]['color'][1], leveldict['rect'][c][1]['color'][2]), rectangle)
@@ -194,6 +196,22 @@ class player:
             return False
         else:
             return True
+    
+    def trigger(self):
+        global leveldict
+        for x in range(len(leveldict['triggers'])):
+            rectangle = pygame.Rect(leveldict['triggers'][x][0]['points'][0], leveldict['triggers'][x][0]['points'][1], leveldict['triggers'][x][0]['points'][2], leveldict['triggers'][x][0]['points'][3])
+            if self.rect.colliderect(rectangle):
+                if leveldict['triggers'][x][1]['func'] == "levelload":
+                    print(leveldict['triggers'][x][2]['perameters'])
+                    script_directory = os.path.dirname(os.path.abspath(__file__))
+                    json_file_path = os.path.join(script_directory, "levels/"+leveldict['triggers'][x][2]['perameters'])
+                    with open(json_file_path, "r") as levelfile:
+                        leveldict = json.load(levelfile)
+                        levelfile.close()
+                    self.x=leveldict["player"]["startpos"][0]
+                    self.y=leveldict["player"]["startpos"][1]
+
             
     def gravitymove(self):
         global camerax, cameray
@@ -232,8 +250,6 @@ class player:
             self.speed = .025
             self.friction = .2
 
-        
-
         if self.direction[0]==0:
             if abs(self.xvelosity) < 0.35:
                 self.xvelosity = 0
@@ -265,8 +281,9 @@ class player:
                 self.xvelosity = 0
             else:
                 self.yvelosity = self.stepup*1.5
-                
-                
+        
+        self.trigger()
+
         camerax += (-self.x-camerax+W/renderxscale/2)/4
         cameray += (-self.y-cameray+H/renderyscale/2)/4
 
