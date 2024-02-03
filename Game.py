@@ -1,17 +1,28 @@
-import pygame, json, os
+import pygame, json, yaml, os
 from stopwatch import Stopwatch
 
-renderxscale = 1
-renderyscale = 1
 
-camerax = 0
-cameray = 0
+with open("config.yaml", "r") as yamlfile:
+    settings = yaml.safe_load(yamlfile)
+    yamlfile.close()
+
+script_directory = os.path.dirname(os.path.abspath(__file__))
+json_file_path = os.path.join(script_directory, "levels/level.json")
+with open(json_file_path, "r") as levelfile:
+    leveldict = json.load(levelfile)
+    levelfile.close()
+
+
+renderxscale = settings['cameraxscale']
+renderyscale = settings['camerayscale']
+
+camerax = leveldict["player"]["startpos"][0]
+cameray = leveldict["player"]["startpos"][1]
 
 pygame.init()
-W, H=800, 450
-#W, H=400, 800
+W, H=settings['W'], settings['H']
 screen = pygame.display.set_mode([W, H])
-pygame_icon = pygame.image.load('Hammer Icon.png')
+pygame_icon = pygame.image.load('images/Hammer Icon.png')
 pygame.display.set_icon(pygame_icon)
 pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
@@ -19,17 +30,6 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial" , 12 , bold = True)
 
 running = True
-
-bcg=(200, 200, 200)
-red=(255, 0 ,0)
-purp=(255, 0, 255)
-wall=(100, 100, 100)
-
-script_directory = os.path.dirname(os.path.abspath(__file__))
-json_file_path = os.path.join(script_directory, "levels/level.json")
-with open(json_file_path, "r") as levelfile:
-    leveldict = json.load(levelfile)
-    levelfile.close()
 
 def collideLineLine(l1_p1, l1_p2, l2_p1, l2_p2):
 
@@ -233,7 +233,7 @@ class player:
             if self.direction[0] != 0:
                 self.xvelosity = self.direction[0]*12.5
             if self.direction[1] != 0:
-                self.yvelosity = self.direction[1]*10
+                self.yvelosity = self.direction[1]*11
             if self.groundtimer > 0:
                 self.dashtimer.reset()
                 self.dashtimer.start()
@@ -298,7 +298,7 @@ class player:
 
 clicking = 0
 v = 0
-p=player(red)
+p=player((255, 0 ,0))
 while running:
     dt = clock.tick(60)
     for event in pygame.event.get():
