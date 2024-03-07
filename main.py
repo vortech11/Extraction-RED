@@ -1,4 +1,4 @@
-import pygame, json, yaml, os
+import pygame, json, yaml, os, asyncio
 from stopwatch import Stopwatch
 
 
@@ -68,7 +68,7 @@ def collideRectPolygon(rect, polygon):
     return False
 
 def playerinput():
-    global renderxscale, renderyscale, clicking, v, a, s
+    global renderxscale, renderyscale, event, a, s, v
     keys=pygame.key.get_pressed()
     mousekey=pygame.mouse.get_pressed()
     mousepos=pygame.mouse.get_pos()
@@ -80,13 +80,6 @@ def playerinput():
 
     if keys[pygame.K_c]: p.dash=True
     else: p.dash=False
-
-    if mousekey[0] and clicking == 0: 
-        clicking = 1
-        print(round(mousepos[0]-camerax, -1), round(mousepos[1]-cameray, -1))
-    if clicking == 1: 
-        if not(mousekey[0]):
-            clicking = 0
     
     if keys[pygame.K_f]: 
         p.x=leveldict['player']['startpos'][0]
@@ -294,23 +287,20 @@ class player:
 
         camerax = -self.x+W/renderxscale/2
         cameray = -self.y+H/renderyscale/2
-
-
-clicking = 0
-v = 0
 p=player((255, 0 ,0))
-while running:
-    dt = clock.tick(60)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+async def main():
+    global dt
+    while running:
+        dt = clock.tick(60)
+        event = pygame.event.get()
 
-    p.bg()
-    p.draw()
+        p.bg()
+        p.draw()
 
-    playerinput()
-    
-    fps_counter()
-    pygame.display.update()
+        playerinput()
+        
+        fps_counter()
+        pygame.display.update()
+        await asyncio.sleep(0)
 
-pygame.quit()
+asyncio.run(main())
