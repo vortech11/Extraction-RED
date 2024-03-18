@@ -1,5 +1,6 @@
 import pygame, json, os
-from stopwatch import Stopwatch
+
+script_directory = os.path.dirname(os.path.abspath(__file__))
 
 renderxscale = 1
 renderyscale = 1
@@ -17,7 +18,7 @@ pygame.init()
 W, H=800, 450
 #W, H=400, 800
 screen = pygame.display.set_mode([W, H])
-pygame_icon = pygame.image.load('Hammer Icon.png')
+pygame_icon = pygame.image.load(os.path.join(script_directory, "../images/Hammer Icon.png"))
 pygame.display.set_icon(pygame_icon)
 pygame.display.set_caption("Half Life III")
 clock = pygame.time.Clock()
@@ -26,21 +27,24 @@ font = pygame.font.SysFont("Arial" , 12 , bold = True)
 
 running = True
 
+color=(50,50,50)
+
 bcg=(200, 200, 200)
 red=(255, 0 ,0)
 purp=(255, 0, 255)
 wall=(100, 100, 100)
+colorchange = False
 
-script_directory = os.path.dirname(os.path.abspath(__file__))
-json_file_path = os.path.join(script_directory, "../levels/level.json")
+leveledit = "level2.json"
+
+json_file_path = os.path.join(script_directory, "../levels/"+leveledit)
 
 with open(json_file_path, "r") as levelfile:
     leveldict = json.load(levelfile)
     levelfile.close()
 
-
 def playerinput():
-    global renderxscale, renderyscale, clicking, v, objectedit, editstatus, posoffset, enter
+    global renderxscale, renderyscale, clickdown, clickup, v, objectedit, editstatus, posoffset, enter, colorchange, color
     keys=pygame.key.get_pressed()
     mousekey=pygame.mouse.get_pressed()
     mousepos=pygame.mouse.get_pos()
@@ -51,17 +55,30 @@ def playerinput():
     else: p.dash=False
 
     if keys[pygame.K_RETURN] and enter == 0:
-        file = open("level.json", "w")
+        file = open(json_file_path, "w")
         json.dump(leveldict, file, indent=6)
         file.close()
         enter = 1
     if not keys[pygame.K_RETURN] and enter == 1: enter = 0
-
-    if mousekey[0] and editstatus == 0:
+    if clickdown == True and editstatus == 0:
         if keys[pygame.K_r]:
             objectedit = len(leveldict['rect'])
-            leveldict['rect'].append([{"points": [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]}, {"color": [70, 70, 70]}])
+            leveldict['rect'].append([{"points": [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]}, {"color": color}])
+            print(leveldict['rect'][objectedit][0]["points"])
             editstatus = 1
+        
+        elif keys[pygame.K_t]:
+            objectedit = len(leveldict['tri'])
+            leveldict['tri'].append([{"points": [round(mousepos[0]-camerax, -1), round(mousepos[1]-cameray, -1), 
+                                                 round(mousepos[0]-camerax, -1)+10, round(mousepos[1]-cameray, -1)+10,
+                                                 round(mousepos[0]-camerax, -1)+10, round(mousepos[1]-cameray, -1),
+                                                 round(mousepos[0]-camerax, -1), round(mousepos[1]-cameray, -1)]}, {"color": [70, 70, 70]}])
+            editstatus = 4
+
+        elif keys[pygame.K_l]:
+            objectedit = len(leveldict['triggers'])
+            leveldict['triggers'].append([{"points": [round(mousepos[0], -1)-camerax, round(mousepos[1], -1)-cameray, 10, 10]}, {"func": "levelload"}, {"perameters": "level2.json"}])
+            editstatus = 3
         
         elif keys[pygame.K_m]:
             for x in range(len(leveldict['rect'])):
@@ -81,16 +98,50 @@ def playerinput():
                 for x in range(len(tobedeleted)):
                     del leveldict['rect'][tobedeleted[x]]
 
-    if editstatus == 1:
-        leveldict['rect'][objectedit][0]["points"][2] = round(mousepos[0]-camerax-leveldict['rect'][objectedit][0]["points"][0], -1)
-        leveldict['rect'][objectedit][0]["points"][3] = round(mousepos[1]-cameray-leveldict['rect'][objectedit][0]["points"][1], -1)
-        if mousekey[0] and not keys[pygame.K_r]:
-            editstatus = 0
-    
-    if editstatus == 2:
-        leveldict['rect'][objectedit][0]["points"][0] = round(mousepos[0]-camerax-posoffset[0], -1)
-        leveldict['rect'][objectedit][0]["points"][1] = round(mousepos[1]-cameray-posoffset[1], -1)
-        if mousekey[0] and not keys[pygame.K_m]:
+    if colorchange == False:
+        if editstatus == 1:
+            leveldict['rect'][objectedit][0]["points"][2] = round(mousepos[0]-camerax-leveldict['rect'][objectedit][0]["points"][0], -1)
+            leveldict['rect'][objectedit][0]["points"][3] = round(mousepos[1]-cameray-leveldict['rect'][objectedit][0]["points"][1], -1)
+            if mousekey[0] and not keys[pygame.K_r]:
+                colorchange = True
+        
+        if editstatus == 2:
+            leveldict['rect'][objectedit][0]["points"][0] = round(mousepos[0]-camerax-posoffset[0], -1)
+            leveldict['rect'][objectedit][0]["points"][1] = round(mousepos[1]-cameray-posoffset[1], -1)
+            if mousekey[0] and not keys[pygame.K_m]:
+                editstatus = 0
+        
+        if editstatus == 3:
+            leveldict['triggers'][objectedit][0]["points"][2] = round(mousepos[0]-camerax-leveldict['triggers'][objectedit][0]["points"][0], -1)
+            leveldict['triggers'][objectedit][0]["points"][3] = round(mousepos[1]-cameray-leveldict['triggers'][objectedit][0]["points"][1], -1)
+            if mousekey[0] and not keys[pygame.K_l]:
+                editstatus = 0
+        
+        if editstatus == 4:
+                leveldict['tri'][objectedit][0]["points"][2] = round(mousepos[0]-camerax, -1)
+                leveldict['tri'][objectedit][0]["points"][3] = round(mousepos[1]-cameray, -1)
+                if clickup == 1:
+                    editstatus += 1
+        
+        if editstatus == 5:
+                leveldict['tri'][objectedit][0]["points"][4] = round(mousepos[0]-camerax, -1)
+                leveldict['tri'][objectedit][0]["points"][5] = round(mousepos[1]-cameray, -1)
+                if clickdown == 1:
+                    colorchange = True
+    if colorchange == True:
+        if keys[pygame.K_q]: color = (31, 158, 27)
+        elif keys[pygame.K_w]: color = (50, 50, 50)
+        elif keys[pygame.K_e]: color = (70, 70, 70)
+        if keys[pygame.K_SPACE]:
+            if editstatus == 5: 
+                leveldict['tri'][objectedit][1]["color"] = color
+                print(leveldict['tri'][objectedit][1]["color"])
+            elif editstatus == 1: 
+                leveldict['rect'][objectedit][1]["color"] = color
+                print(leveldict['rect'][objectedit][1]["color"])
+            else:
+                print(editstatus)
+            colorchange = False
             editstatus = 0
     
     if keys[pygame.K_f]: 
@@ -117,11 +168,16 @@ class player:
         screen.fill((200, 200, 200))
         for c in range(0, len(leveldict['tri'])):
             self.poly = self.createrenderPolygon(camerax, cameray, leveldict['tri'][c][0]['points'])
-            pygame.draw.polygon(screen, wall, self.poly)
+            pygame.draw.polygon(screen, (leveldict["tri"][c][1]['color'][0], leveldict["tri"][c][1]['color'][1], leveldict["tri"][c][1]['color'][2]), self.poly)
         for c in range(0, len(leveldict['rect'])):
             rectangle = pygame.Rect((leveldict['rect'][c][0]['points'][0]+camerax)*renderxscale, (leveldict['rect'][c][0]['points'][1]+cameray)*renderyscale, leveldict['rect'][c][0]['points'][2]*renderxscale, leveldict['rect'][c][0]['points'][3]*renderyscale)
             pygame.draw.rect(screen, (leveldict['rect'][c][1]['color'][0], leveldict['rect'][c][1]['color'][1], leveldict['rect'][c][1]['color'][2]), rectangle)
-    
+
+        for c in range(0, len(leveldict['triggers'])):
+            rectangle = pygame.Rect((leveldict['triggers'][c][0]['points'][0]+camerax)*renderxscale, (leveldict['triggers'][c][0]['points'][1]+cameray)*renderyscale, leveldict['triggers'][c][0]['points'][2]*renderxscale, leveldict['triggers'][c][0]['points'][3]*renderyscale)
+            if leveldict['triggers'][c][1]['func'] == 'levelload': pygame.draw.rect(screen, (245, 242, 66), rectangle)
+            else: pygame.draw.rect(screen, (0, 0, 0), rectangle)
+
     def createrenderPolygon(self, x, y, list):
         return [
             ((x+list[0])*renderxscale, (list[1]+y)*renderyscale), ((x+list[2])*renderxscale, (list[3]+y)*renderyscale), 
@@ -147,7 +203,6 @@ class player:
         self.dash=False
         self.candash=False
         self.groundtimer = 0
-        self.dashtimer = Stopwatch()
         self.noclip = False
 
     def noclipmove(self):
@@ -159,7 +214,6 @@ class player:
         cameray = -self.y+H/renderyscale/2
 
 
-clicking = 0
 v = 0
 p=player(red)
 while running:
@@ -167,7 +221,11 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+        if event.type == pygame.MOUSEBUTTONDOWN: clickdown = True
+        else: clickdown = False
+        if event.type == pygame.MOUSEBUTTONUP: 
+            clickup = True
+        else: clickup = False
     p.bg()
 
     playerinput()

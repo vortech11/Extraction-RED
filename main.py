@@ -202,8 +202,7 @@ class player:
                     with open(json_file_path, "r") as levelfile:
                         leveldict = json.load(levelfile)
                         levelfile.close()
-                    self.x=leveldict["player"]["startpos"][0]
-                    self.y=leveldict["player"]["startpos"][1]
+                    
 
             
     def gravitymove(self):
