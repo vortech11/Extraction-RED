@@ -15,7 +15,7 @@ posoffset = [0, 0]
 enter = 0
 
 pygame.init()
-W, H=800, 450
+W, H=1600, 900
 #W, H=400, 800
 screen = pygame.display.set_mode([W, H])
 pygame_icon = pygame.image.load(os.path.join(script_directory, "../images/Hammer Icon.png"))

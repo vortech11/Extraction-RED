@@ -11,6 +11,6 @@ What has once started as a tiny project to port one of my games on Scratch, has 
 * A customizable camera
 * Much much more (in the future)
 # How to run:
-This is somewhat self-explanatory. Just run the "Game.py" file and the game will start. Change values in the "config.yaml" file to change player settings. You might need to change the height and width values depending on how large you need the screen. Have fun trying new things.
+This is somewhat self-explanatory. Just run the "Game.py" file and the game will start. Change values in the `config.yaml` file to change player settings. You might need to change the height and width values depending on how large you need the screen. Have fun trying new things.
 # What about the future?
 My game is not the best platformer out there. However, I created this. I did this with little help and with the added bonus of having to deal with school. Yes, I could use Unity or Unreal to make a +1000% better game, but it wouldn't be the same. That is a double-edged sword. Yes, it may be fun to complete something, but it takes a ton of time and effort to complete rudimentary bullet points. So, until I lose motivation, I will be working on this game.
